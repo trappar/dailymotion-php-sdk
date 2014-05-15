@@ -1,0 +1,12 @@
+{
+    "name": "trappar/dailymotion-php-sdk",
+    "description": "Unofficial Dailymotion PHP SDK",
+    "keywords": ["dailymotion", "php", "api", "sdk", "client"],
+    "homepage": "https://github.com/trappar/dailymotion-php-sdk",
+    "license": "Apache-2.0",
+    "autoload": {
+        "psr-4": {
+            "Dailymotion\\": "src"
+        }
+    }
+}
