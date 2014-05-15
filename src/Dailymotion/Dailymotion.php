@@ -101,29 +101,10 @@ class Dailymotion
     }
 
     /**
-     * Method will either return an access token if one has already been set, or exchange an authorization code for
-     * an access token.
-     *
-     * @param  string $authorizationCode
-     * @return string
-     * @throws AuthException
+     * @return string|null
      */
-    public function getAccessToken($authorizationCode = null)
+    public function getAccessToken()
     {
-        if (!$this->accessToken && $authorizationCode) {
-            if (!$this->getClientId() || !$this->getClientSecret() || !$this->getRedirectUri()) {
-                throw new AuthException('Can not get access token without Client ID, Client Secret, and Redirect URI');
-            }
-
-            return $this->request("POST", self::ACCESS_TOKEN_ENDPOINT, array(
-                'grant_type'    => 'authorization_code',
-                'code'          => $authorizationCode,
-                'client_id'     => $this->getClientId(),
-                'client_secret' => $this->getClientSecret(),
-                'redirect_uri'  => $this->getRedirectUri()
-            ));
-        }
-
         return $this->accessToken;
     }
 
@@ -261,6 +242,8 @@ class Dailymotion
      */
     public function buildAuthorizationEndpoint($state = null)
     {
+        $this->verifyAuthInfoPresent('Can not build authorization endpoint without Client ID, Client Secret, and Redirect URI');
+
         $query = array(
             "response_type" => 'code',
             "client_id"     => $this->getClientId(),
@@ -274,6 +257,31 @@ class Dailymotion
         }
 
         return self::AUTH_ENDPOINT . '?' . http_build_query($query);
+    }
+
+    /**
+     * Exchange an authorization code for an access token.
+     * @param  string $authorizationCode
+     * @return string
+     * @throws AuthException
+     */
+    public function authorize($authorizationCode)
+    {
+        $this->verifyAuthInfoPresent('Can not get access token without Client ID, Client Secret, and Redirect URI');
+
+        $response = $this->request("POST", self::ACCESS_TOKEN_ENDPOINT, array(
+            'grant_type'    => 'authorization_code',
+            'code'          => $authorizationCode,
+            'client_id'     => $this->getClientId(),
+            'client_secret' => $this->getClientSecret(),
+            'redirect_uri'  => $this->getRedirectUri()
+        ));
+
+        if (isset($response['body']['access_token'])) {
+            $this->setAccessToken($response['body']['access_token']);
+        }
+
+        return $response;
     }
 
     /**
@@ -333,5 +341,12 @@ class Dailymotion
         $response['body'] = json_decode($response['body'], true);
 
         return $response;
+    }
+
+    private function verifyAuthInfoPresent($message)
+    {
+        if (!$this->getClientId() || !$this->getClientSecret() || !$this->getRedirectUri()) {
+            throw new AuthException($message);
+        }
     }
 }
